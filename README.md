@@ -1,0 +1,1 @@
+Swagger Codegen Generator for kotlin android client with Retrofit2 and Moshi
