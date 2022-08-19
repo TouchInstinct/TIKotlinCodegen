@@ -1,0 +1,23 @@
+{{>licenseInfo}}
+package {{modelPackage}}
+
+import com.squareup.moshi.JsonClass
+import com.squareup.moshi.ToJson
+import com.squareup.moshi.FromJson
+{{#imports}}import {{import}}
+{{/imports}}
+{{#jodaTime}}
+import org.joda.time.DateTime
+{{/jodaTime}}
+
+{{#models}}
+{{#model}}
+{{#is this 'alias'}}
+typealias {{classname}} = {{dataType}}
+{{/is}}
+{{#isNot this 'alias'}}
+{{#is this 'enum'}}{{>enum_class}}{{/is}}
+{{#isNot this 'enum'}}{{>data_class}}{{/isNot}}
+{{/isNot}}
+{{/model}}
+{{/models}}

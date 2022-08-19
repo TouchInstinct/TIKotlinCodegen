@@ -1,0 +1,35 @@
+{{>licenseInfo}}
+package {{apiPackage}}
+
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.POST
+import retrofit2.http.PUT
+{{#imports}}import {{import}}
+{{/imports}}
+{{#jodaTime}}
+import org.joda.time.DateTime
+{{/jodaTime}}
+
+{{#operations}}
+interface {{classname}} {
+    {{#operation}}
+    {{#contents}}
+    /**
+     * {{summary}}
+     * {{notes}}
+    {{#parameters}} * @param {{paramName}} {{description}} {{^required}}(optional{{#defaultValue}}, default to {{{.}}}{{/defaultValue}}){{/required}}
+    {{/parameters}} * @return {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}
+     */{{#returnType}}
+    {{/returnType}}
+    @{{httpMethod}}("{{{path}}}")
+    suspend fun {{operationId}}({{#parameters}}
+        {{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{#hasMore}},{{/hasMore}}{{/parameters}}{{#if authMethods}}{{#if parameters}},
+        {{/if}}{{/if}}{{#authMethods}}{{>securityParam}}{{#hasMore}},{{/hasMore}}{{/authMethods}}
+    ): {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Unit{{/returnType}}
+
+    {{/contents}}
+    {{/operation}}
+}
+{{/operations}}
