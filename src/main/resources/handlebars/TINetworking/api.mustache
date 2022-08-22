@@ -1,4 +1,5 @@
 {{>licenseInfo}}
+
 package {{apiPackage}}
 
 import retrofit2.http.DELETE
@@ -6,6 +7,7 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import {{packageName}}.AuthRequest
 {{#imports}}import {{import}}
 {{/imports}}
 {{#jodaTime}}
@@ -23,10 +25,10 @@ interface {{classname}} {
     {{/parameters}} * @return {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}
      */{{#returnType}}
     {{/returnType}}
+    {{#if authMethods}}@AuthRequest{{/if}}
     @{{httpMethod}}("{{{path}}}")
     suspend fun {{operationId}}({{#parameters}}
-        {{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{#hasMore}},{{/hasMore}}{{/parameters}}{{#if authMethods}}{{#if parameters}},
-        {{/if}}{{/if}}{{#authMethods}}{{>securityParam}}{{#hasMore}},{{/hasMore}}{{/authMethods}}
+        {{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{#hasMore}},{{/hasMore}}{{/parameters}}
     ): {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}Unit{{/returnType}}
 
     {{/contents}}

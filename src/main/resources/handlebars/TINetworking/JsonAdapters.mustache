@@ -1,0 +1,13 @@
+{{>licenseInfo}}
+
+package {{packageName}}
+
+import com.squareup.moshi.Moshi
+{{#each jsonAdaptersImports}}
+import {{.}}
+{{/each}}
+
+fun Moshi.Builder.addGeneratedJsonAdapters(): Moshi.Builder = this
+{{#each jsonAdapters}}
+        .add({{.}}())
+{{/each}}

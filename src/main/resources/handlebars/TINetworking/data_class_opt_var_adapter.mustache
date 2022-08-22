@@ -1,0 +1,1 @@
+        val {{{name}}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{#if vendorExtensions.x-is-date-format}}kotlin.String{{else}}{{{datatype}}}{{/if}}{{/isEnum}}? = {{#defaultvalue}}{{defaultvalue}}{{/defaultvalue}}{{^defaultvalue}}null{{/defaultvalue}}

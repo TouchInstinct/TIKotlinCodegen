@@ -1,14 +1,10 @@
 {{>licenseInfo}}
+
 package {{modelPackage}}
 
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.ToJson
 import com.squareup.moshi.FromJson
-{{#imports}}import {{import}}
-{{/imports}}
-{{#jodaTime}}
-import org.joda.time.DateTime
-{{/jodaTime}}
 
 {{#models}}
 {{#model}}

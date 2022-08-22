@@ -6,6 +6,9 @@ import io.swagger.codegen.v3.*;
 import io.swagger.codegen.v3.generators.handlebars.BaseItemsHelper;
 import io.swagger.codegen.v3.generators.handlebars.ExtensionHelper;
 import io.swagger.codegen.v3.generators.kotlin.AbstractKotlinCodegen;
+import io.swagger.v3.oas.models.media.DateSchema;
+import io.swagger.v3.oas.models.media.DateTimeSchema;
+import io.swagger.v3.oas.models.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +25,8 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
     protected String dateLibrary = DateLibrary.JODA_TIME.value;
     protected String projectName = "SwaggerAPI";
     private Map<String, String> allCustomDateFormats = new HashMap<>();
-    private Set<String> allEnumAdapters = new HashSet<>();
-    private Set<String> allEnumAdaptersImports = new HashSet<>();
+    private Set<String> allJsonAdapters = new HashSet<>();
+    private Set<String> allJsonAdaptersImports = new HashSet<>();
 
     public enum DateLibrary {
         STRING("string"),
@@ -94,12 +97,12 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
         supportingFiles.add(new SupportingFile("APIDateFormat.mustache",
                 sourceFolder,
                 "APIDateFormat.kt"));
-        supportingFiles.add(new SupportingFile("GeneratedDateAdapter.mustache",
+        supportingFiles.add(new SupportingFile("JsonAdapters.mustache",
                 sourceFolder,
-                "GeneratedDateAdapter.kt"));
-        supportingFiles.add(new SupportingFile("EnumJsonAdapters.mustache",
+                "JsonAdapters.kt"));
+        supportingFiles.add(new SupportingFile("AuthorizationInterceptor.mustache",
                 sourceFolder,
-                "EnumJsonAdapters.kt"));
+                "AuthorizationInterceptor.kt"));
 
         return supportingFiles;
     }
@@ -152,8 +155,8 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
     public Map<String, Object> postProcessSupportingFileData(Map<String, Object> objs) {
         Map<String, Object> supportingFileData = super.postProcessSupportingFileData(objs);
         supportingFileData.put("apiDateFormats", allCustomDateFormats);
-        supportingFileData.put("enumAdapters", allEnumAdapters);
-        supportingFileData.put("enumAdaptersImports", allEnumAdaptersImports);
+        supportingFileData.put("jsonAdapters", allJsonAdapters);
+        supportingFileData.put("jsonAdaptersImports", allJsonAdaptersImports);
         return supportingFileData;
     }
 
@@ -161,11 +164,22 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
     public void postProcessModelProperty(CodegenModel model, CodegenProperty property) {
         super.postProcessModelProperty(model, property);
 
-        updateEnumAdapters(model, property);
+        if (typeAliases.containsKey(property.baseType)) {
+            Schema resolvedPropertySchema = getOpenAPI().getComponents().getSchemas().get(property.datatype);
+
+            postProcessAliasProperty(property, resolvedPropertySchema);
+        }
+
+        addEnumJsonAdapters(model, property);
 
         updateVendorExtensionsForProperty(property);
         if (property.getIsListContainer()) {
             updateVendorExtensionsForProperty(property.items);
+        }
+
+        if (isDateFormatProperty(property)) {
+            model.getVendorExtensions().put(TINetworkingCodegenConstants.HAS_DATE, Boolean.TRUE);
+            addJsonAdaptersForModelWithDate(model);
         }
 
         if (property.getIsObject() && isReservedWord(property.getDatatype())) {
@@ -174,19 +188,27 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
         }
     }
 
-    private void updateEnumAdapters(CodegenModel model, CodegenProperty property) {
+    private void addEnumJsonAdapters(CodegenModel model, CodegenProperty property) {
         boolean isEnum = ExtensionHelper.getBooleanValue(property, "x-is-enum");
         if (isEnum) {
             String enumAdapterName = model.name + "." + property.enumName + ".JsonAdapter";
             String importName = modelPackage + "." + model.name;
-            allEnumAdapters.add(enumAdapterName);
-            allEnumAdaptersImports.add(importName);
+            allJsonAdapters.add(enumAdapterName);
+            allJsonAdaptersImports.add(importName);
         }
+    }
+
+    private void addJsonAdaptersForModelWithDate(CodegenModel model) {
+        String jsonAdapterName = model.name + "." + model.name + "JsonAdapter";
+        String importName = modelPackage + "." + model.name;
+        allJsonAdapters.add(jsonAdapterName);
+        allJsonAdaptersImports.add(importName);
+
     }
 
     @Override
     public String toParamName(String name) {
-        return super.toParamName(name).replaceAll("[^A-Za-z0-9_]", "");
+        return replaceSpecialCharacters(super.toParamName(name));
     }
 
     @Override
@@ -216,14 +238,19 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
 
         if (isISO8601DateProperty(property)) {
             vendorExtensions.put(TINetworkingCodegenConstants.IS_ISO8601_DATE, true);
+            vendorExtensions.put(TINetworkingCodegenConstants.IS_DATE_FORMAT, true);
         } else if (isCustomDateFormatProperty(property)) {
             String customDateFormat = (String) vendorExtensions.get(TINetworkingCodegenConstants.DATE_FORMAT);
-            String dateFormatName = customDateFormat.replace(".", "_")
-                    .replaceAll("[^A-Za-z0-9_]", "");
+            String dateFormatName = replaceSpecialCharacters(customDateFormat.replace(".", "_"));
             vendorExtensions.put(TINetworkingCodegenConstants.DATE_FORMAT_NAME, dateFormatName);
+            vendorExtensions.put(TINetworkingCodegenConstants.IS_DATE_FORMAT, true);
 
             allCustomDateFormats.put(dateFormatName, customDateFormat);
         }
+    }
+
+    private String replaceSpecialCharacters(String text) {
+        return text.replaceAll("[^A-Za-z0-9_]", "");
     }
 
     private boolean isISO8601DateProperty(CodegenProperty property) {
@@ -234,5 +261,34 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
 
     private boolean isCustomDateFormatProperty(CodegenProperty property) {
         return property.getVendorExtensions().containsKey(TINetworkingCodegenConstants.DATE_FORMAT);
+    }
+
+    private boolean isDateFormatProperty(CodegenProperty property) {
+        Map<String, Object> vendorExtensions = property.getVendorExtensions();
+        return vendorExtensions.containsKey(TINetworkingCodegenConstants.DATE_FORMAT)
+                || property.getIsDate()
+                || property.getIsDateTime();
+    }
+
+    private void postProcessAliasProperty(CodegenProperty codegenProperty, Schema resolvedPropertySchema) {
+        Map<String, Object> propertyExtensions = codegenProperty.getVendorExtensions();
+
+        propertyExtensions.put(CodegenConstants.IS_ALIAS_EXT_NAME, Boolean.TRUE);
+
+        codegenProperty.setDescription(codegenProperty.getDescription() == null
+                ? resolvedPropertySchema.getDescription()
+                : codegenProperty.getDescription());
+
+        if (resolvedPropertySchema.getExtensions() != null) {
+            propertyExtensions.putAll(resolvedPropertySchema.getExtensions());
+        }
+
+        if (resolvedPropertySchema instanceof DateSchema) {
+            propertyExtensions.put(CodegenConstants.IS_DATE_EXT_NAME, Boolean.TRUE);
+        }
+
+        if (resolvedPropertySchema instanceof DateTimeSchema) {
+            propertyExtensions.put(CodegenConstants.IS_DATE_TIME_EXT_NAME, Boolean.TRUE);
+        }
     }
 }
