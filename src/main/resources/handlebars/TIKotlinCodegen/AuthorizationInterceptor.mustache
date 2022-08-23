@@ -10,21 +10,31 @@ import java.io.IOException
 
 class AuthorizationInterceptor : Interceptor {
 
-    private var sessionToken: String? = null
-
-    fun setSessionToken(sessionToken: String?) {
-        this.sessionToken = sessionToken
+    {{#authMethods}}
+    {{#isBearer}}private var bearer: String? = null
+    fun setBearerToken(bearer: String?) {
+        this.bearer = bearer
     }
+    {{/isBearer}}
+{{#isBasic}}private var basic: String? = null
+    fun setBasicToken(basic: String?) {
+        this.basic = basic
+    }
+    {{/isBasic}}{{#isApiKey}}{{#isKeyInHeader}}private var {{vendorExtensions.x-security-name-param}}: String? = null
+    fun set{{vendorExtensions.x-security-camel-case-name}}({{vendorExtensions.x-security-name-param}}: String?) {
+        this.{{vendorExtensions.x-security-name-param}} = {{vendorExtensions.x-security-name-param}}
+    }
+        {{/isKeyInHeader}}{{/isApiKey}}
+
+    {{/authMethods}}
 
     @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {
         val request: Request = chain.request()
         val requestBuilder: Request.Builder = request.newBuilder()
 
-        if (request.needAuth()) {
-        {{#authMethods}}
-            {{#isApiKey}}{{#isKeyInHeader}}requestBuilder.addHeader("{{keyParamName}}", sessionToken){{/isKeyInHeader}}{{/isApiKey}}
-        {{/authMethods}}
+        if (request.needAuth()) { {{#authMethods}}
+            {{#isApiKey}}{{#isKeyInHeader}}requestBuilder.addHeader("{{keyParamName}}", {{vendorExtensions.x-security-name-param}}){{/isKeyInHeader}}{{/isApiKey}}{{#isBasic}}requestBuilder.addHeader("Authorization", "Basic $basic"){{/isBasic}}{{#isBearer}}requestBuilder.addHeader("Authorization", "Bearer $bearer"){{/isBearer}}{{/authMethods}}
         }
 
         return chain.proceed(requestBuilder.build())

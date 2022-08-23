@@ -9,6 +9,7 @@ import io.swagger.codegen.v3.generators.kotlin.AbstractKotlinCodegen;
 import io.swagger.v3.oas.models.media.DateSchema;
 import io.swagger.v3.oas.models.media.DateTimeSchema;
 import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -290,5 +291,17 @@ public class TIKotlinCodegen extends AbstractKotlinCodegen {
         if (resolvedPropertySchema instanceof DateTimeSchema) {
             propertyExtensions.put(CodegenConstants.IS_DATE_TIME_EXT_NAME, Boolean.TRUE);
         }
+    }
+
+    @Override
+    public List<CodegenSecurity> fromSecurity(Map<String, SecurityScheme> securitySchemeMap) {
+        List<CodegenSecurity> securities = super.fromSecurity(securitySchemeMap);
+        Iterator it = securities.iterator();
+        while(it.hasNext()) {
+            CodegenSecurity security = (CodegenSecurity)it.next();
+            security.getVendorExtensions().put(TIKotlinCodegenConstants.SECURITY_NAME, camelize(security.name));
+            security.getVendorExtensions().put(TIKotlinCodegenConstants.SECURITY_NAME_PARAM, camelize(security.name, true));
+        }
+        return securities;
     }
 }
