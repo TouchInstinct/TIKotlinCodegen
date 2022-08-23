@@ -16,11 +16,11 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.*;
 
-public class TINetworkingCodegen extends AbstractKotlinCodegen {
+public class TIKotlinCodegen extends AbstractKotlinCodegen {
 
     public static final String DATE_LIBRARY = "dateLibrary";
     public static final String PROJECT_NAME = "projectName";
-    private static Logger LOGGER = LoggerFactory.getLogger(TINetworkingCodegen.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(TIKotlinCodegen.class);
 
     protected String dateLibrary = DateLibrary.JODA_TIME.value;
     protected String projectName = "SwaggerAPI";
@@ -40,7 +40,7 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
         }
     }
 
-    public TINetworkingCodegen() {
+    public TIKotlinCodegen() {
         super();
         this.typeMapping.put("array", "kotlin.collections.List");
         this.typeMapping.put("list", "kotlin.collections.List");
@@ -71,7 +71,7 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
 
     @Override
     public String getDefaultTemplateDir() {
-        return "TINetworking";
+        return "TIKotlinCodegen";
     }
 
     public CodegenType getTag() {
@@ -79,11 +79,11 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
     }
 
     public String getName() {
-        return "TINetworking";
+        return "TIKotlinCodegen";
     }
 
     public String getHelp() {
-        return "Generates a TINetworking kotlin client library.";
+        return "Generates a kotlin client library.";
     }
 
     public void setDateLibrary(String library) {
@@ -178,7 +178,7 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
         }
 
         if (isDateFormatProperty(property)) {
-            model.getVendorExtensions().put(TINetworkingCodegenConstants.HAS_DATE, Boolean.TRUE);
+            model.getVendorExtensions().put(TIKotlinCodegenConstants.HAS_DATE, Boolean.TRUE);
             addJsonAdaptersForModelWithDate(model);
         }
 
@@ -237,13 +237,13 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
         Map<String, Object> vendorExtensions = property.getVendorExtensions();
 
         if (isISO8601DateProperty(property)) {
-            vendorExtensions.put(TINetworkingCodegenConstants.IS_ISO8601_DATE, true);
-            vendorExtensions.put(TINetworkingCodegenConstants.IS_DATE_FORMAT, true);
+            vendorExtensions.put(TIKotlinCodegenConstants.IS_ISO8601_DATE, true);
+            vendorExtensions.put(TIKotlinCodegenConstants.IS_DATE_FORMAT, true);
         } else if (isCustomDateFormatProperty(property)) {
-            String customDateFormat = (String) vendorExtensions.get(TINetworkingCodegenConstants.DATE_FORMAT);
+            String customDateFormat = (String) vendorExtensions.get(TIKotlinCodegenConstants.DATE_FORMAT);
             String dateFormatName = replaceSpecialCharacters(customDateFormat.replace(".", "_"));
-            vendorExtensions.put(TINetworkingCodegenConstants.DATE_FORMAT_NAME, dateFormatName);
-            vendorExtensions.put(TINetworkingCodegenConstants.IS_DATE_FORMAT, true);
+            vendorExtensions.put(TIKotlinCodegenConstants.DATE_FORMAT_NAME, dateFormatName);
+            vendorExtensions.put(TIKotlinCodegenConstants.IS_DATE_FORMAT, true);
 
             allCustomDateFormats.put(dateFormatName, customDateFormat);
         }
@@ -260,12 +260,12 @@ public class TINetworkingCodegen extends AbstractKotlinCodegen {
     }
 
     private boolean isCustomDateFormatProperty(CodegenProperty property) {
-        return property.getVendorExtensions().containsKey(TINetworkingCodegenConstants.DATE_FORMAT);
+        return property.getVendorExtensions().containsKey(TIKotlinCodegenConstants.DATE_FORMAT);
     }
 
     private boolean isDateFormatProperty(CodegenProperty property) {
         Map<String, Object> vendorExtensions = property.getVendorExtensions();
-        return vendorExtensions.containsKey(TINetworkingCodegenConstants.DATE_FORMAT)
+        return vendorExtensions.containsKey(TIKotlinCodegenConstants.DATE_FORMAT)
                 || property.getIsDate()
                 || property.getIsDateTime();
     }
