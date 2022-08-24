@@ -7,12 +7,8 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.PUT
-import {{packageName}}.AuthRequest
 {{#imports}}import {{import}}
 {{/imports}}
-{{#jodaTime}}
-import org.joda.time.DateTime
-{{/jodaTime}}
 
 {{#operations}}
 interface {{classname}} {
@@ -25,7 +21,7 @@ interface {{classname}} {
     {{/parameters}} * @return {{#returnType}}{{{returnType}}}{{/returnType}}{{^returnType}}void{{/returnType}}
      */{{#returnType}}
     {{/returnType}}
-    {{#if authMethods}}@AuthRequest{{/if}}
+    {{#authMethods}}{{#isApiKey}}{{#isKeyInHeader}}@{{packageName}}.{{vendorExtensions.x-security-camel-case-name}}Auth{{/isKeyInHeader}}{{/isApiKey}}{{#isBearer}}@{{packageName}}.BearerAuthRequest{{/isBearer}}{{#isBasic}}@{{packageName}}.BasicAuthRequest{{/isBasic}}{{/authMethods}}
     @{{httpMethod}}("{{{path}}}")
     suspend fun {{operationId}}({{#parameters}}
         {{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{#hasMore}},{{/hasMore}}{{/parameters}}

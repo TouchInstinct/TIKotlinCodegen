@@ -32,17 +32,41 @@ class AuthorizationInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request: Request = chain.request()
         val requestBuilder: Request.Builder = request.newBuilder()
+        {{#authMethods}}{{#isApiKey}}{{#isKeyInHeader}}
 
-        if (request.needAuth()) { {{#authMethods}}
-            {{#isApiKey}}{{#isKeyInHeader}}requestBuilder.addHeader("{{keyParamName}}", {{vendorExtensions.x-security-name-param}}){{/isKeyInHeader}}{{/isApiKey}}{{#isBasic}}requestBuilder.addHeader("Authorization", "Basic $basic"){{/isBasic}}{{#isBearer}}requestBuilder.addHeader("Authorization", "Bearer $bearer"){{/isBearer}}{{/authMethods}}
-        }
+        if (request.need{{vendorExtensions.x-security-camel-case-name}}Auth()) {
+            requestBuilder.addHeader("{{keyParamName}}", {{vendorExtensions.x-security-name-param}})
+        }{{/isKeyInHeader}}{{/isApiKey}}{{#isBasic}}
+        if (request.needBasicAuth()) {
+            requestBuilder.addHeader("Authorization", "Basic $basic")
+        }{{/isBasic}}{{#isBearer}}
+        if (request.needBearerAuth()) {
+            requestBuilder.addHeader("Authorization", "Bearer $bearer")
+        }{{/isBearer}}{{/authMethods}}
 
         return chain.proceed(requestBuilder.build())
     }
 }
 
-fun Request.needAuth() = tag(Invocation::class.java)?.method()?.getAnnotation(AuthRequest::class.java) != null
+{{#authMethods}}{{#isApiKey}}{{#isKeyInHeader}}
+
+fun Request.need{{vendorExtensions.x-security-camel-case-name}}Auth() = tag(Invocation::class.java)?.method()?.getAnnotation({{vendorExtensions.x-security-camel-case-name}}Auth::class.java) != null
 
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION)
-annotation class AuthRequest()
+annotation class {{vendorExtensions.x-security-camel-case-name}}Auth()
+{{/isKeyInHeader}}{{/isApiKey}}{{#isBasic}}
+
+fun Request.needBasicAuth() = tag(Invocation::class.java)?.method()?.getAnnotation(BasicAuthRequest::class.java) != null
+
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.FUNCTION)
+annotation class BasicAuthRequest()
+{{/isBasic}}{{#isBearer}}
+
+fun Request.needBearerAuth() = tag(Invocation::class.java)?.method()?.getAnnotation(BearerAuthRequest::class.java) != null
+
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.FUNCTION)
+annotation class BearerAuthRequest()
+{{/isBearer}}{{/authMethods}}
